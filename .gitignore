@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Claude Code
+.claude/
+
+# Environment & secrets
+.env
+*.key
+*.pem
+
+# Models (too large for git)
+models/
+*.safetensors
+*.bin
+*.gguf
+*.whl
+
+# Temporary files
+/tmp/
+*.tmp
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Operations logs (development process documentation)
+ops/
+
+# Development documentation
+docs/
+
+# Data files
+data/
+*.mp3
+*.wav
+*.mp4
+*.m4a
+*.ogg
+*.flac

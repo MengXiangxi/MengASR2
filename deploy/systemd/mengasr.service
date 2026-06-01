@@ -1,0 +1,41 @@
+[Unit]
+Description=MengASR2 — 本地 ASR HTTP 服务
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=bchnm
+WorkingDirectory=/srv/mengasr/src
+
+# ── 模型路径 ──────────────────────────────────────────────
+Environment=MENGASR_MIMO_MODEL=/srv/mengasr/models/XiaomiMiMo/MiMo-V2.5-ASR
+Environment=MENGASR_MIMO_TOKENIZER=/srv/mengasr/models/XiaomiMiMo/MiMo-Audio-Tokenizer
+Environment=MENGASR_MIMO_CODE=/srv/mengasr/MiMo-V2.5-ASR-code
+
+# ── 服务配置 ──────────────────────────────────────────────
+Environment=MENGASR_PORT=8787
+Environment=MENGASR_HOST=0.0.0.0
+
+# ── HuggingFace 配置（说话人分离需要） ─────────────────────
+# 请替换为你自己的 HuggingFace Read Token
+# 创建地址: https://hf.co/settings/tokens
+Environment=MENGASR_HF_TOKEN=YOUR_HF_TOKEN_HERE
+Environment=HF_ENDPOINT=https://hf-mirror.com
+
+ExecStart=/srv/mengasr/.venv/bin/python -m mengasr_server
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=mengasr
+
+# GPU 访问
+SupplementaryGroups=video
+
+# 资源限制
+LimitNOFILE=65536
+MemoryMax=24G
+
+[Install]
+WantedBy=multi-user.target

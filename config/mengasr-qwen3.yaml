@@ -1,0 +1,30 @@
+# ============================================================
+# MengASR2 配置文件 — Qwen3-ASR 后端
+# ============================================================
+
+worker:
+  backend: qwen3-asr
+  host: 127.0.0.1
+  port: 8789
+  qwen3_model_id: /srv/mengasr/models/Qwen/Qwen3-ASR-1___7B
+
+listener:
+  host: "0.0.0.0"
+  port: 8787
+  max_upload_mb: 2000
+  tmp_dir: /tmp/mengasr
+
+auth:
+  api_key: ""
+
+jobs:
+  ttl_hours: 24
+  max_queue: 20
+
+diarization:
+  hf_token: "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"
+  hf_endpoint: "https://hf-mirror.com"
+
+ffmpeg:
+  bin: ffmpeg
+  ffprobe: ffprobe

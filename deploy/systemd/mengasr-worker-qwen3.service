@@ -1,0 +1,31 @@
+[Unit]
+Description=MengASR2 Worker (Qwen3-ASR) — ASR 模型推理进程
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=bchnm
+WorkingDirectory=/srv/mengasr/server
+
+# ── Qwen3-ASR 独立 venv（transformers 4.57 vs MiMo 4.49 不兼容）───
+Environment=PATH=/srv/mengasr/.venv-qwen3asr/bin:/usr/local/cuda-12/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=MENGASR_CONFIG=/srv/mengasr/mengasr-qwen3.yaml
+Environment=HF_ENDPOINT=https://hf-mirror.com
+Environment=PIP_CONSTRAINT=/srv/mengasr/constraints-qwen3.txt
+
+ExecStart=/srv/mengasr/.venv-qwen3asr/bin/python -m mengasr_server --worker
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=mengasr-worker-qwen3
+
+# GPU 访问
+SupplementaryGroups=video
+
+# 资源限制
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

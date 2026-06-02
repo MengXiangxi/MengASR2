@@ -1,10 +1,11 @@
 # MengASR2
 
-本地部署的 ASR（自动语音识别）HTTP 服务，基于 [MiMo-V2.5-ASR](https://huggingface.co/Xiaomi-MiMo/MiMo-V2.5-ASR) 模型，支持句段时间戳和说话人分离。附赠 CLI 客户端，一条命令完成转写。
+本地部署的 ASR（自动语音识别）HTTP 服务，支持多后端切换，带 CLI 客户端。当前生产环境运行 [Qwen3-ASR-1.7B](https://huggingface.co/Qwen/Qwen3-ASR-1.7B)，可选切换 [MiMo-V2.5-ASR](https://huggingface.co/Xiaomi-MiMo/MiMo-V2.5-ASR)。
 
 ## 特性
 
-- **MiMo-V2.5-ASR** — 7.5B 参数大模型，中文/英文/方言识别
+- **多后端支持** — Qwen3-ASR-1.7B（默认） / MiMo-V2.5-ASR（7.5B），改配置即可切换
+- **双进程架构** — Listener（HTTP 网关）+ Worker（模型推理），独立 venv 隔离
 - **句段时间戳** — Silero VAD 分段，输出 SRT/VTT 字幕
 - **说话人分离** — pyannote.audio，自动区分多人对话
 - **同步 + 异步 API** — 小文件秒出结果，大文件后台排队
@@ -12,22 +13,83 @@
 - **OpenAI 兼容** — `/v1/audio/transcriptions` 接口格式兼容 Whisper API
 - **systemd 常驻** — 开机自启，故障自动重启
 
-## 性能
+## 后端对比
 
-| 指标 | 数值（RTX 3090 Ti 24GB） |
-|------|--------------------------|
-| 模型加载 | ~10s |
-| 推理速度（72s 音频） | ~9s（RTF=0.13） |
-| VAD 分段 + 逐段推理（22min 音频） | ~3min（428 段） |
-| 说话人分离（72s） | ~1s |
-| GPU 显存占用 | ~20GB（含 MiMo + pyannote） |
+| | Qwen3-ASR-1.7B（默认） | MiMo-V2.5-ASR |
+|---|---|---|
+| 参数量 | 1.7B | 7.5B |
+| 显存占用 | **5.8 GB** | ~20 GB |
+| 模型大小 | 4.4 GB | 34 GB |
+| 加载时间 | **2.3s** | ~12s |
+| VAD 分段推理（72s） | ~15s | ~9s |
+| transformers | 4.57.6 | 4.49.0 |
+| venv | `.venv-qwen3asr` | `.venv` |
+
+> **切换后端：** 修改 `mengasr.yaml` 中 `worker.backend`，重启对应 systemd 服务即可。
+
+## 架构
+
+```
+┌──────────────┐  localhost:8789  ┌──────────────┐
+│   Listener   │◄────────────────►│    Worker    │
+│   :8787      │  HTTP (内部协议)  │   :8789      │
+│              │                  │              │
+│ 鉴权/FFmpeg   │                  │ 模型推理      │
+│ 文件管理      │                  │ VAD 分段     │
+│ Job 队列     │                  │ 说话人分离    │
+│ SRT/VTT 格式化│                  │              │
+└──────────────┘                  └──────────────┘
+```
 
 ## 目录结构
 
 ```
 MengASR2/
+├── config/                    # 配置文件
+│   ├── mengasr.yaml           #   默认配置（当前指向 MiMo）
+│   └── mengasr-qwen3.yaml     #   Qwen3-ASR 配置
 ├── src/
 │   ├── mengasr_server/        # 服务端源码
+│   │   ├── listener.py        #   Listener 进程（HTTP 网关）
+│   │   ├── worker.py          #   Worker 进程（模型推理）
+│   │   ├── worker_client.py   #   Listener → Worker 客户端
+│   │   ├── app.py             #   单体模式（兼容旧版）
+│   │   ├── config.py          #   向后兼容配置（env vars）
+│   │   ├── config_schema.py   #   YAML 配置加载器
+│   │   ├── schemas.py         #   Pydantic 数据模型
+│   │   ├── auth.py            #   Bearer Token 鉴权
+│   │   ├── audio.py           #   FFmpeg 标准化
+│   │   ├── jobs.py            #   异步任务队列
+│   │   ├── backends/          #   ASR 后端
+│   │   │   ├── base.py        #     抽象基类
+│   │   │   ├── mimo.py        #     MiMo-V2.5-ASR
+│   │   │   └── qwen3.py       #     Qwen3-ASR-1.7B
+│   │   ├── timestamps/        #   时间戳
+│   │   │   └── vad.py         #     Silero VAD 分段器
+│   │   ├── formatters/        #   输出格式化
+│   │   │   ├── srt.py         #     SRT 字幕
+│   │   │   └── vtt.py         #     WebVTT 字幕
+│   │   └── diarization/       #   说话人分离
+│   │       └── pyannote_engine.py  # pyannote 实现
+│   └── mengasr_client/        # 客户端源码
+│       ├── client.py          #   HTTP 客户端
+│       └── cli.py             #   CLI 命令行工具
+├── deploy/                    # 部署配置
+│   ├── systemd/
+│   │   ├── mengasr-listener.service
+│   │   ├── mengasr-worker.service        # MiMo
+│   │   └── mengasr-worker-qwen3.service  # Qwen3
+│   ├── constraints.txt                    # MiMo 版本锁定
+│   └── constraints-qwen3.txt              # Qwen3 版本锁定
+├── scripts/                   # 安装和运维脚本
+├── docs/                      # 设计文档
+│   └── dual-process-architecture.md
+├── ops/                       # 开发日志
+├── requirements.txt
+├── requirements.lock
+├── pyproject.toml
+└── README.md
+```
 │   │   ├── app.py             # FastAPI 入口 + 路由
 │   │   ├── config.py          # 环境变量配置
 │   │   ├── schemas.py         # Pydantic 数据模型
@@ -281,11 +343,14 @@ sudo systemctl enable mengasr
 - [x] 阶段 4：句段级时间戳（VAD + SRT/VTT）
 - [x] 阶段 5：说话人分离（pyannote）
 - [x] 阶段 6：客户端 CLI 工具
+- [x] 阶段 7：Qwen3-ASR 后端（多后端可切换，当前生产后端）
 
 ### 待开发
 
-- [ ] 阶段 7：Qwen3-ASR 后端（可切换）
-- [ ] 阶段 8：生产化优化（Docker、压力测试）
+- [ ] Qwen3-ForcedAligner-0.6B 精确时间戳（需下载 ~1.2 GB 模型）
+- [ ] Docker + NVIDIA Container Toolkit 容器化
+- [ ] 压力测试与性能调优
+- [ ] Dae 网络不稳定（医院网络环境）
 
 ### 扩展点
 

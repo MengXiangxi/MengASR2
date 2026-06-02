@@ -4,15 +4,19 @@ build-backend = "setuptools.backends._legacy:_Backend"
 
 [project]
 name = "mengasr2"
-version = "0.2.0"
+version = "0.3.0"
 description = "本地 ASR HTTP 服务 — MiMo-V2.5-ASR on GPU"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.12"
 authors = [{ name = "MengXiangxi" }]
 
+[project.optional-dependencies]
+client = ["httpx>=0.28.0"]
+
 [project.scripts]
-mengasr = "mengasr_server.app:main"
+mengasr = "mengasr_client.cli:main"
+mengasr-server = "mengasr_server.app:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

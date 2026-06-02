@@ -1,6 +1,6 @@
 # MengASR2
 
-本地部署的 ASR（自动语音识别）HTTP 服务，基于 [MiMo-V2.5-ASR](https://huggingface.co/Xiaomi-MiMo/MiMo-V2.5-ASR) 模型，支持句段时间戳和说话人分离。
+本地部署的 ASR（自动语音识别）HTTP 服务，基于 [MiMo-V2.5-ASR](https://huggingface.co/Xiaomi-MiMo/MiMo-V2.5-ASR) 模型，支持句段时间戳和说话人分离。附赠 CLI 客户端，一条命令完成转写。
 
 ## 特性
 
@@ -8,6 +8,7 @@
 - **句段时间戳** — Silero VAD 分段，输出 SRT/VTT 字幕
 - **说话人分离** — pyannote.audio，自动区分多人对话
 - **同步 + 异步 API** — 小文件秒出结果，大文件后台排队
+- **CLI 客户端** — `mengasr transcribe` 一键转写，支持 JSON/SRT/VTT 输出
 - **OpenAI 兼容** — `/v1/audio/transcriptions` 接口格式兼容 Whisper API
 - **systemd 常驻** — 开机自启，故障自动重启
 
@@ -17,7 +18,7 @@
 |------|--------------------------|
 | 模型加载 | ~10s |
 | 推理速度（72s 音频） | ~9s（RTF=0.13） |
-| VAD 分段 + 逐段推理 | ~15s |
+| VAD 分段 + 逐段推理（22min 音频） | ~3min（428 段） |
 | 说话人分离（72s） | ~1s |
 | GPU 显存占用 | ~20GB（含 MiMo + pyannote） |
 
@@ -25,23 +26,28 @@
 
 ```
 MengASR2/
-├── src/mengasr_server/        # 服务端源码
-│   ├── app.py                 # FastAPI 入口 + 路由
-│   ├── config.py              # 环境变量配置
-│   ├── schemas.py             # Pydantic 数据模型
-│   ├── auth.py                # Bearer Token 鉴权
-│   ├── audio.py               # FFmpeg 标准化
-│   ├── jobs.py                # 异步任务队列
-│   ├── backends/              # ASR 后端
-│   │   ├── base.py            #   抽象基类
-│   │   └── mimo.py            #   MiMo-V2.5-ASR 实现
-│   ├── timestamps/            # 时间戳
-│   │   └── vad.py             #   Silero VAD 分段器
-│   ├── formatters/            # 输出格式化
-│   │   ├── srt.py             #   SRT 字幕
-│   │   └── vtt.py             #   WebVTT 字幕
-│   └── diarization/           # 说话人分离
-│       └── pyannote_engine.py #   pyannote 实现
+├── src/
+│   ├── mengasr_server/        # 服务端源码
+│   │   ├── app.py             # FastAPI 入口 + 路由
+│   │   ├── config.py          # 环境变量配置
+│   │   ├── schemas.py         # Pydantic 数据模型
+│   │   ├── auth.py            # Bearer Token 鉴权
+│   │   ├── audio.py           # FFmpeg 标准化
+│   │   ├── jobs.py            # 异步任务队列
+│   │   ├── backends/          # ASR 后端
+│   │   │   ├── base.py        #   抽象基类
+│   │   │   └── mimo.py        #   MiMo-V2.5-ASR 实现
+│   │   ├── timestamps/        # 时间戳
+│   │   │   └── vad.py         #   Silero VAD 分段器
+│   │   ├── formatters/        # 输出格式化
+│   │   │   ├── srt.py         #   SRT 字幕
+│   │   │   └── vtt.py         #   WebVTT 字幕
+│   │   └── diarization/       # 说话人分离
+│   │       └── pyannote_engine.py  # pyannote 实现
+│   └── mengasr_client/        # 客户端源码
+│       ├── __init__.py        # 包入口
+│       ├── client.py          # HTTP 客户端（同步/异步/轮询）
+│       └── cli.py             # CLI 命令行工具
 ├── deploy/                    # 部署配置
 │   └── systemd/mengasr.service
 ├── scripts/                   # 安装和运维脚本
@@ -49,7 +55,8 @@ MengASR2/
 │   ├── download_models.sh     # 模型下载
 │   └── start.sh               # 手动启动
 ├── docs/                      # 设计文档
-├── requirements.txt
+├── requirements.txt           # 依赖（锁定版本）
+├── requirements.lock          # pip freeze 精确版本
 ├── pyproject.toml
 └── README.md
 ```
@@ -114,6 +121,61 @@ curl -X POST http://localhost:8787/v1/audio/transcriptions \
   -F "response_format=srt" \
   -o 输出.srt
 ```
+
+## CLI 客户端
+
+安装后可通过 `mengasr` 命令直接使用：
+
+```bash
+# 安装客户端（需要 httpx）
+pip install -e ".[client]"
+
+# 健康检查
+mengasr --server-url http://bchnm-dl.bchnm:8787 health
+
+# 同步转写（JSON 输出到 stdout）
+mengasr transcribe audio.mp3 --server-url http://bchnm-dl.bchnm:8787 -l chinese
+
+# 带时间戳的 SRT 字幕
+mengasr transcribe audio.mp3 --server-url http://bchnm-dl.bchnm:8787 \
+  --timestamps segment -f srt -o output.srt
+
+# 说话人分离
+mengasr transcribe meeting.mp3 --server-url http://bchnm-dl.bchnm:8787 \
+  --timestamps segment --diarization -f srt -o meeting.srt
+
+# 异步任务（推荐用于大文件）
+mengasr transcribe long_recording.mp3 --server-url http://bchnm-dl.bchnm:8787 \
+  --timestamps segment --async -f srt -o output.srt
+
+# 查看任务列表
+mengasr --server-url http://bchnm-dl.bchnm:8787 jobs
+
+# 查看/下载指定任务
+mengasr --server-url http://bchnm-dl.bchnm:8787 job <job_id> --result srt
+```
+
+### CLI 命令一览
+
+| 命令 | 说明 |
+|------|------|
+| `mengasr health` | 检查服务端健康状态 |
+| `mengasr transcribe <file>` | 转写音频/视频文件（别名 `t`） |
+| `mengasr jobs` | 列出异步任务 |
+| `mengasr job <id>` | 查看/删除/下载指定任务 |
+
+### transcribe 参数
+
+| 参数 | 缩写 | 默认值 | 说明 |
+|------|------|--------|------|
+| `--language` | `-l` | `auto` | 语言：`auto` / `chinese` / `english` |
+| `--format` | `-f` | `json` | 输出格式：`json` / `text` / `srt` / `vtt` |
+| `--timestamps` | | `none` | 时间戳模式：`none` / `segment` |
+| `--diarization` | | `false` | 启用说话人分离（自动启用 segment 时间戳） |
+| `--num-speakers` | | `0` | 说话人数量（0=自动检测） |
+| `--async` | | `false` | 使用异步任务模式（适合大文件） |
+| `--poll-interval` | | `2` | 异步模式轮询间隔（秒） |
+| `--output` | `-o` | stdout | 输出文件路径 |
 
 ## API 文档
 
@@ -218,10 +280,10 @@ sudo systemctl enable mengasr
 - [x] 阶段 3：异步任务队列
 - [x] 阶段 4：句段级时间戳（VAD + SRT/VTT）
 - [x] 阶段 5：说话人分离（pyannote）
+- [x] 阶段 6：客户端 CLI 工具
 
 ### 待开发
 
-- [ ] 阶段 6：客户端 CLI 工具
 - [ ] 阶段 7：Qwen3-ASR 后端（可切换）
 - [ ] 阶段 8：生产化优化（Docker、压力测试）
 
@@ -230,6 +292,7 @@ sudo systemctl enable mengasr
 - **新后端**：继承 `src/mengasr_server/backends/base.py` 的 `ASRBackend` 即可接入新模型
 - **新格式**：在 `src/mengasr_server/formatters/` 下添加新格式化器
 - **新 VAD**：替换 `src/mengasr_server/timestamps/vad.py` 即可更换 VAD 引擎
+- **云端后端**：在 `src/mengasr_client/` 中新增 DashScope 后端作为 fallback
 
 ## 致谢
 

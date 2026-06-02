@@ -90,38 +90,6 @@ MengASR2/
 ├── pyproject.toml
 └── README.md
 ```
-│   │   ├── app.py             # FastAPI 入口 + 路由
-│   │   ├── config.py          # 环境变量配置
-│   │   ├── schemas.py         # Pydantic 数据模型
-│   │   ├── auth.py            # Bearer Token 鉴权
-│   │   ├── audio.py           # FFmpeg 标准化
-│   │   ├── jobs.py            # 异步任务队列
-│   │   ├── backends/          # ASR 后端
-│   │   │   ├── base.py        #   抽象基类
-│   │   │   └── mimo.py        #   MiMo-V2.5-ASR 实现
-│   │   ├── timestamps/        # 时间戳
-│   │   │   └── vad.py         #   Silero VAD 分段器
-│   │   ├── formatters/        # 输出格式化
-│   │   │   ├── srt.py         #   SRT 字幕
-│   │   │   └── vtt.py         #   WebVTT 字幕
-│   │   └── diarization/       # 说话人分离
-│   │       └── pyannote_engine.py  # pyannote 实现
-│   └── mengasr_client/        # 客户端源码
-│       ├── __init__.py        # 包入口
-│       ├── client.py          # HTTP 客户端（同步/异步/轮询）
-│       └── cli.py             # CLI 命令行工具
-├── deploy/                    # 部署配置
-│   └── systemd/mengasr.service
-├── scripts/                   # 安装和运维脚本
-│   ├── install.sh             # 服务器安装
-│   ├── download_models.sh     # 模型下载
-│   └── start.sh               # 手动启动
-├── docs/                      # 设计文档
-├── requirements.txt           # 依赖（锁定版本）
-├── requirements.lock          # pip freeze 精确版本
-├── pyproject.toml
-└── README.md
-```
 
 ## 快速开始
 

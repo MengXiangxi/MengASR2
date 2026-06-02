@@ -1,7 +1,7 @@
 [Unit]
 Description=MengASR2 Listener — HTTP API 网关（对公网暴露）
-After=network.target mengasr-worker.service
-Requires=mengasr-worker.service
+After=network.target
+Wants=mengasr-worker-qwen3.service
 
 [Service]
 Type=simple

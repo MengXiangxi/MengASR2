@@ -1,0 +1,58 @@
+# ============================================================
+# MengASR2 配置文件
+# ============================================================
+# 路径：/srv/mengasr/mengasr.yaml（可通过 MENGASR_CONFIG 覆盖）
+#
+# 优先级：环境变量 > 此文件 > 代码默认值
+#
+# 切换后端只需改 worker.backend，重启 Worker 即可：
+#   worker.backend: mimo        → MiMo-V2.5-ASR (7.5B)
+#   worker.backend: qwen3-asr   → Qwen3-ASR-1.7B（TODO）
+# ============================================================
+
+# ── Worker 进程配置（模型推理） ──────────────────────────
+worker:
+  # 后端选择：mimo | qwen3-asr（改这里即可切换模型）
+  backend: mimo
+
+  # 监听地址（仅 localhost，不对公网暴露）
+  host: 127.0.0.1
+  port: 8789
+
+  # MiMo 后端路径
+  mimo_model_path: /srv/mengasr/models/XiaomiMiMo/MiMo-V2.5-ASR
+  mimo_tokenizer_path: /srv/mengasr/models/XiaomiMiMo/MiMo-Audio-Tokenizer
+  mimo_code_path: /srv/mengasr/MiMo-V2.5-ASR-code
+
+  # Qwen3-ASR 后端（启用时设置 backend: qwen3-asr）
+  qwen3_model_id: Qwen/Qwen3-ASR-1.7B
+
+# ── Listener 进程配置（对外 HTTP 网关） ──────────────────
+listener:
+  # 对外监听（0.0.0.0 允许外部访问，Tailscale 内网安全）
+  host: "0.0.0.0"
+  port: 8787
+  max_upload_mb: 2000
+  tmp_dir: /tmp/mengasr
+
+# ── 鉴权 ─────────────────────────────────────────────────
+auth:
+  # Bearer Token（空 = 不鉴权，适合 Tailscale 内网）
+  api_key: ""
+
+# ── 异步任务队列 ─────────────────────────────────────────
+jobs:
+  ttl_hours: 24       # 已完成任务保留时间
+  max_queue: 20        # 最大排队任务数
+
+# ── 说话人分离 ───────────────────────────────────────────
+diarization:
+  # HuggingFace Token（说话人分离需要，留空则禁用）
+  hf_token: ""
+  # HuggingFace 镜像（服务器无法直连 huggingface.co 时使用）
+  hf_endpoint: "https://hf-mirror.com"
+
+# ── FFmpeg 路径 ──────────────────────────────────────────
+ffmpeg:
+  bin: ffmpeg
+  ffprobe: ffprobe

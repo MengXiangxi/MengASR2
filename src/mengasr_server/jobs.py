@@ -180,9 +180,10 @@ class JobStore:
 class JobWorker:
     """后台协程：从队列取任务执行推理。"""
 
-    def __init__(self, store: JobStore, backend: Any):
+    def __init__(self, store: JobStore, worker: Any):
+        """worker 可以是 WorkerClient（listener 模式）或 ASRBackend（单体模式）。"""
         self.store = store
-        self.backend = backend
+        self.worker = worker  # WorkerClient | ASRBackend
         self.queue: asyncio.Queue[str] = asyncio.Queue()
         self._task: asyncio.Task | None = None
         self._stop = False
@@ -222,6 +223,7 @@ class JobWorker:
 
     async def _process(self, job: Job) -> None:
         from .audio import get_audio_duration, normalize_to_wav
+        from .worker_client import WorkerClient
 
         job.status = JobStatus.running
         job.started_at = _now_iso()
@@ -235,7 +237,6 @@ class JobWorker:
             # 查找上传的临时文件
             tmp_input = settings.tmp_dir / f"job_{job.job_id}"
             if not tmp_input.exists():
-                # 尝试常见后缀
                 for suffix in (".wav", ".mp3", ".m4a", ".ogg", ".flac", ".mp4", ".webm"):
                     candidate = settings.tmp_dir / f"job_{job.job_id}{suffix}"
                     if candidate.exists():
@@ -248,33 +249,32 @@ class JobWorker:
             tmp_wav = await normalize_to_wav(tmp_input)
             job.duration = await get_audio_duration(tmp_wav)
 
-            # 推理
-            start = time.monotonic()
-            if job.timestamps == "segment":
-                seg_results = await self.backend.transcribe_segments(tmp_wav, language=job.language)
-                text = " ".join(s.text for s in seg_results)
-                job.segments = [{"start": s.start, "end": s.end, "text": s.text} for s in seg_results]
+            # 推理：WorkerClient（新架构）或 ASRBackend（旧架构）
+            if isinstance(self.worker, WorkerClient):
+                # ── 新架构：委托给 Worker 进程 ──────────────
+                result = await self.worker.ainfer(
+                    tmp_wav,
+                    language=job.language,
+                    timestamps=job.timestamps,
+                    diarization=job.diarization,
+                    num_speakers=job.num_speakers,
+                )
+                text = result.get("text", "")
+                if result.get("segments"):
+                    job.segments = result["segments"]
+                logger.info("任务 %s Worker 推理完成: infer=%ss",
+                            job.job_id, result.get("inference_time"))
             else:
-                text = await self.backend.transcribe(tmp_wav, language=job.language)
-            elapsed = time.monotonic() - start
-            logger.info("任务 %s 推理完成: %.2fs", job.job_id, elapsed)
-
-            # 说话人分离
-            if job.diarization and job.segments:
-                from .diarization.pyannote_engine import assign_speakers_to_segments
-                from .schemas import Segment as SegmentModel
-                diarizer = None
-                # 从 app 模块获取 diarizer 实例
-                from . import app as app_module
-                diarizer = app_module.diarizer
-                if diarizer and diarizer.is_loaded():
-                    ns = job.num_speakers if job.num_speakers > 0 else None
-                    speaker_turns = await diarizer.diarize(str(tmp_wav), num_speakers=ns)
-                    seg_models = [SegmentModel(**s) for s in job.segments]
-                    speakers = assign_speakers_to_segments(seg_models, speaker_turns)
-                    for seg_dict, spk in zip(job.segments, speakers):
-                        seg_dict["speaker"] = spk
-                    logger.info("任务 %s 说话人分离完成: %s", job.job_id, sorted(set(speakers)))
+                # ── 旧架构：直接调用 backend ──────────────
+                start = time.monotonic()
+                if job.timestamps == "segment":
+                    seg_results = await self.worker.transcribe_segments(tmp_wav, language=job.language)
+                    text = " ".join(s.text for s in seg_results)
+                    job.segments = [{"start": s.start, "end": s.end, "text": s.text} for s in seg_results]
+                else:
+                    text = await self.worker.transcribe(tmp_wav, language=job.language)
+                elapsed = time.monotonic() - start
+                logger.info("任务 %s 推理完成: %.2fs", job.job_id, elapsed)
 
             # 保存结果
             job.text = text
@@ -309,7 +309,6 @@ class JobWorker:
             self.store.update(job)
 
         finally:
-            # 清理输入临时文件（保留结果文件）
             if tmp_input and tmp_input.exists():
                 tmp_input.unlink(missing_ok=True)
             if tmp_wav and tmp_wav.exists():

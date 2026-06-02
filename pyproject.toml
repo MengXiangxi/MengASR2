@@ -17,6 +17,8 @@ client = ["httpx>=0.28.0"]
 [project.scripts]
 mengasr = "mengasr_client.cli:main"
 mengasr-server = "mengasr_server.app:main"
+mengasr-listener = "mengasr_server.listener:main"
+mengasr-worker = "mengasr_server.worker:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

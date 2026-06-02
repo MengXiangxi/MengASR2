@@ -1,6 +1,5 @@
 [Unit]
-Description=MengASR2 — 本地 ASR HTTP 服务（单体模式，已弃用）
-# 新架构请使用 mengasr-listener.service + mengasr-worker.service
+Description=MengASR2 Worker — ASR 模型推理进程
 After=network.target
 Wants=network.target
 
@@ -11,13 +10,15 @@ WorkingDirectory=/srv/mengasr/server
 
 # ── 配置文件 ──────────────────────────────────────────────
 Environment=MENGASR_CONFIG=/srv/mengasr/mengasr.yaml
+Environment=HF_ENDPOINT=https://hf-mirror.com
+Environment=PIP_CONSTRAINT=/srv/mengasr/constraints.txt
 
-ExecStart=/srv/mengasr/.venv/bin/python -m mengasr_server
+ExecStart=/srv/mengasr/.venv/bin/python -m mengasr_server --worker
 Restart=on-failure
 RestartSec=10
 StandardOutput=journal
 StandardError=journal
-SyslogIdentifier=mengasr
+SyslogIdentifier=mengasr-worker
 
 # GPU 访问
 SupplementaryGroups=video

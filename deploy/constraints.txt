@@ -1,0 +1,10 @@
+# MengASR2 pip 约束文件
+# 防止 pip install 时意外升级核心依赖导致版本漂移
+# 部署到 /srv/mengasr/constraints.txt
+# systemd 服务通过 PIP_CONSTRAINT 环境变量引用
+
+torch==2.6.0
+torchaudio==2.6.0
+transformers==4.49.0
+accelerate==1.13.0
+flash-attn==2.7.3

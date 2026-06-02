@@ -1,8 +1,7 @@
 [Unit]
-Description=MengASR2 — 本地 ASR HTTP 服务（单体模式，已弃用）
-# 新架构请使用 mengasr-listener.service + mengasr-worker.service
-After=network.target
-Wants=network.target
+Description=MengASR2 Listener — HTTP API 网关（对公网暴露）
+After=network.target mengasr-worker.service
+Requires=mengasr-worker.service
 
 [Service]
 Type=simple
@@ -11,20 +10,17 @@ WorkingDirectory=/srv/mengasr/server
 
 # ── 配置文件 ──────────────────────────────────────────────
 Environment=MENGASR_CONFIG=/srv/mengasr/mengasr.yaml
+Environment=PIP_CONSTRAINT=/srv/mengasr/constraints.txt
 
-ExecStart=/srv/mengasr/.venv/bin/python -m mengasr_server
+ExecStart=/srv/mengasr/.venv/bin/python -m mengasr_server --listener
 Restart=on-failure
 RestartSec=10
 StandardOutput=journal
 StandardError=journal
-SyslogIdentifier=mengasr
-
-# GPU 访问
-SupplementaryGroups=video
+SyslogIdentifier=mengasr-listener
 
 # 资源限制
 LimitNOFILE=65536
-MemoryMax=24G
 
 [Install]
 WantedBy=multi-user.target

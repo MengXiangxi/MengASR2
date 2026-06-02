@@ -10,6 +10,8 @@ fastapi==0.136.3
 uvicorn==0.48.0
 pydantic==2.13.4
 python-multipart==0.0.30
+httpx==0.28.1
+pyyaml==6.0.1
 
 # ── ASR 模型（⚠️ torch 版本必须锁定，禁止升级）────────────
 torch==2.6.0

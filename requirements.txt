@@ -1,26 +1,32 @@
 # MengASR2 服务端依赖
-# ── 核心框架 ──────────────────────────────────────────────
-fastapi>=0.116.1
-uvicorn>=0.35.0
-pydantic>=2.11.7
-python-multipart>=0.0.30
+# 精确锁定版本见 requirements.lock（由 pip freeze 生成）
+# 部署时使用: uv pip install -r requirements.lock
+#
+# ⚠️ pyannote.audio 和 flash-attn 通过本地 wheel 安装（见 wheels/ 目录）
+# ⚠️ 不要在运行中的服务上执行 pip install --upgrade，会导致 torch/cuDNN 版本漂移
 
-# ── ASR 模型 ──────────────────────────────────────────────
+# ── 核心框架 ──────────────────────────────────────────────
+fastapi==0.136.3
+uvicorn==0.48.0
+pydantic==2.13.4
+python-multipart==0.0.30
+
+# ── ASR 模型（⚠️ torch 版本必须锁定，禁止升级）────────────
 torch==2.6.0
 torchaudio==2.6.0
 transformers==4.49.0
-accelerate>=1.9.0
+accelerate==1.13.0
 
 # ── 音频处理 ──────────────────────────────────────────────
-librosa>=0.11.0
-scipy>=1.16.1
-soundfile
+librosa==0.11.0
+scipy==1.17.1
+soundfile==0.13.1
 
 # ── VAD (语音活动检测) ───────────────────────────────────
-silero-vad>=6.0.0
+silero-vad==6.2.1
 
-# ── 说话人分离 ────────────────────────────────────────────
-pyannote.audio>=4.0.0
+# ── 说话人分离（本地 wheel，见 wheels/ 目录）─────────────
+# pyannote.audio==4.0.4  (从 wheels/pyannote_audio-4.0.4-py3-none-any.whl 安装)
 
 # ── 工具 ──────────────────────────────────────────────────
 python-dotenv

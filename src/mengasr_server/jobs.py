@@ -17,7 +17,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from .config import settings
 
@@ -180,7 +180,7 @@ class JobStore:
 class JobWorker:
     """后台协程：从队列取任务执行推理。"""
 
-    def __init__(self, store: JobStore, backend):
+    def __init__(self, store: JobStore, backend: Any):
         self.store = store
         self.backend = backend
         self.queue: asyncio.Queue[str] = asyncio.Queue()

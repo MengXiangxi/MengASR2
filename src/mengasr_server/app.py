@@ -412,7 +412,7 @@ def _guess_suffix(filename: str) -> str:
     return ".wav"
 
 
-def _cleanup(path) -> None:
+def _cleanup(path: Path | None) -> None:
     """安全删除临时文件。"""
     try:
         if path and path.exists():

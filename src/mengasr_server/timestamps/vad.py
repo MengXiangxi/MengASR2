@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
+from typing import Any
 
 import torch
 import torchaudio
@@ -27,7 +28,7 @@ class VADSegmenter:
 
     def __init__(self, sample_rate: int = 16000):
         self.sample_rate = sample_rate
-        self._model = None
+        self._model: Any = None
 
     def _ensure_model(self) -> None:
         """延迟加载 Silero VAD 模型。"""

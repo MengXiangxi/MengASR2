@@ -9,6 +9,8 @@ import tempfile
 import uuid
 from pathlib import Path
 
+from fastapi import UploadFile
+
 from .config import settings
 
 logger = logging.getLogger("mengasr.audio")
@@ -79,7 +81,7 @@ def save_upload(upload_bytes: bytes, suffix: str = ".wav") -> Path:
     return path
 
 
-async def save_upload_streaming(file, suffix: str = ".wav") -> Path:
+async def save_upload_streaming(file: UploadFile, suffix: str = ".wav") -> Path:
     """流式保存上传文件（避免将整个文件读入内存）。
 
     使用 shutil.copyfileobj 从 FastAPI 的临时文件直接写入磁盘，

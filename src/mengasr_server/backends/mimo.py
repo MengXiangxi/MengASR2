@@ -7,6 +7,7 @@ import logging
 import sys
 import time
 from pathlib import Path
+from typing import Any
 
 from .base import ASRBackend, SegmentResult
 from ..config import settings
@@ -25,7 +26,7 @@ class MiMoBackend(ASRBackend):
     """MiMo-V2.5-ASR 官方 PyTorch BF16 后端。"""
 
     def __init__(self) -> None:
-        self._model = None  # MimoAudio 实例
+        self._model: Any = None  # MimoAudio 实例
         self._loaded = False
         self._gpu_lock = asyncio.Lock()  # 串行推理锁
 

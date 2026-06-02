@@ -10,6 +10,7 @@ import asyncio
 import logging
 import os
 from dataclasses import dataclass
+from typing import Any
 
 import torch
 import torchaudio
@@ -31,7 +32,7 @@ class PyannoteDiarizer:
     def __init__(self, hf_token: str, hf_endpoint: str = "https://hf-mirror.com"):
         self._hf_token = hf_token
         self._hf_endpoint = hf_endpoint
-        self._pipeline = None
+        self._pipeline: Any = None
         self._loaded = False
         self._gpu_lock = asyncio.Lock()
 
@@ -143,7 +144,7 @@ def assign_speakers_to_segments(
 
         if overlap:
             # 选择重叠最大的说话人
-            best_speaker = max(overlap, key=overlap.get)
+            best_speaker = max(overlap, key=lambda k: overlap[k])
             speakers.append(best_speaker)
         else:
             speakers.append("unknown")

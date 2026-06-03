@@ -25,6 +25,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import sys
 from pathlib import Path
 
@@ -42,8 +43,8 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--server-url",
-        default="http://localhost:8787",
-        help="MengASR2 服务端地址 (default: http://localhost:8787)",
+        default=os.environ.get("MENGASR_SERVER_URL", "http://localhost:8787"),
+        help="MengASR2 服务端地址 (default: MENGASR_SERVER_URL 环境变量 或 http://localhost:8787)",
     )
     parser.add_argument(
         "--api-key",

@@ -5,6 +5,7 @@ MengASR2 批量转写工具
 调用 MengASR2 服务端 API 进行批量音频/视频转写，支持说话人分离。
 """
 
+import os
 import sys
 import time
 import argparse
@@ -280,8 +281,8 @@ def main():
     # ── 服务端 ────────────────────────────────────────────
     parser.add_argument(
         "--server", "-s",
-        default="http://localhost:8787",
-        help="MengASR2 服务端地址 (默认: http://localhost:8787)",
+        default=os.environ.get("MENGASR_SERVER_URL", "http://localhost:8787"),
+        help="MengASR2 服务端地址 (默认: MENGASR_SERVER_URL 环境变量 或 http://localhost:8787)",
     )
     parser.add_argument(
         "--api-key",

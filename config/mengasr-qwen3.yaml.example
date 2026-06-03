@@ -1,0 +1,38 @@
+# ============================================================
+# MengASR2 配置文件模板 — Qwen3-ASR 后端
+# ============================================================
+# 复制为 mengasr-qwen3.yaml 并根据实际环境修改：
+#   cp config/mengasr-qwen3.yaml.example config/mengasr-qwen3.yaml
+# ============================================================
+
+worker:
+  backend: qwen3-asr
+  host: 127.0.0.1
+  port: 8789
+  # 可使用 HuggingFace model ID（自动下载）或本地绝对路径
+  qwen3_model_id: Qwen/Qwen3-ASR-1.7B
+
+listener:
+  host: "0.0.0.0"
+  port: 8787
+  max_upload_mb: 2000
+  tmp_dir: /tmp/mengasr
+
+auth:
+  # 生产环境建议设置一个强密码
+  api_key: ""
+
+jobs:
+  ttl_hours: 24
+  max_queue: 20
+
+diarization:
+  # HuggingFace Token（说话人分离需要，留空则禁用）
+  # 创建 Token: https://huggingface.co/settings/tokens
+  hf_token: ""
+  # 中国大陆用户可设置为: https://hf-mirror.com
+  hf_endpoint: "https://huggingface.co"
+
+ffmpeg:
+  bin: ffmpeg
+  ffprobe: ffprobe

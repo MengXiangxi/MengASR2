@@ -1,5 +1,7 @@
 # MengASR2
 
+> ⚠️ **安全提示：本项目默认不启用鉴权，请勿将服务直接暴露在公网。** 详见 [安全须知](#安全须知)。
+
 本地部署的 ASR（自动语音识别）HTTP 服务，支持多后端切换，带 CLI 客户端。当前生产环境运行 [Qwen3-ASR-1.7B](https://huggingface.co/Qwen/Qwen3-ASR-1.7B)，可选切换 [MiMo-V2.5-ASR](https://huggingface.co/Xiaomi-MiMo/MiMo-V2.5-ASR)。
 
 ## 特性
@@ -116,14 +118,15 @@ bash scripts/download_models.sh
 
 ### 3. 配置
 
-编辑 `/etc/systemd/system/mengasr.service`，设置：
+```bash
+# 复制配置模板
+cp config/mengasr.yaml.example config/mengasr.yaml
 
-```ini
-# HuggingFace Token（说话人分离需要）
-# 创建: https://hf.co/settings/tokens
-# 需接受 pyannote/speaker-diarization-community-1 的使用条款
-Environment=MENGASR_HF_TOKEN=hf_your_token_here
+# 编辑配置（修改模型路径、HF Token 等）
+vim config/mengasr.yaml
 ```
+
+配置详情参见 [`config/README.md`](config/README.md)。
 
 ### 4. 启动
 
@@ -161,28 +164,28 @@ curl -X POST http://localhost:8787/v1/audio/transcriptions \
 pip install -e ".[client]"
 
 # 健康检查
-mengasr --server-url http://bchnm-dl.bchnm:8787 health
+mengasr --server-url http://localhost:8787 health
 
 # 同步转写（JSON 输出到 stdout）
-mengasr transcribe audio.mp3 --server-url http://bchnm-dl.bchnm:8787 -l chinese
+mengasr transcribe audio.mp3 --server-url http://localhost:8787 -l chinese
 
 # 带时间戳的 SRT 字幕
-mengasr transcribe audio.mp3 --server-url http://bchnm-dl.bchnm:8787 \
+mengasr transcribe audio.mp3 --server-url http://localhost:8787 \
   --timestamps segment -f srt -o output.srt
 
 # 说话人分离
-mengasr transcribe meeting.mp3 --server-url http://bchnm-dl.bchnm:8787 \
+mengasr transcribe meeting.mp3 --server-url http://localhost:8787 \
   --timestamps segment --diarization -f srt -o meeting.srt
 
 # 异步任务（推荐用于大文件）
-mengasr transcribe long_recording.mp3 --server-url http://bchnm-dl.bchnm:8787 \
+mengasr transcribe long_recording.mp3 --server-url http://localhost:8787 \
   --timestamps segment --async -f srt -o output.srt
 
 # 查看任务列表
-mengasr --server-url http://bchnm-dl.bchnm:8787 jobs
+mengasr --server-url http://localhost:8787 jobs
 
 # 查看/下载指定任务
-mengasr --server-url http://bchnm-dl.bchnm:8787 job <job_id> --result srt
+mengasr --server-url http://localhost:8787 job <job_id> --result srt
 ```
 
 ### CLI 命令一览
@@ -263,23 +266,21 @@ curl http://server:8787/v1/jobs/abc123
 curl "http://server:8787/v1/jobs/abc123/result?response_format=srt" -o output.srt
 ```
 
-## 配置项
+## 配置
 
-所有配置通过环境变量驱动：
+配置优先级：**环境变量 > `mengasr.yaml` > 代码默认值**
+
+详见 [`config/README.md`](config/README.md) 和 [`deploy/README.md`](deploy/README.md)。
+
+### 主要环境变量
 
 | 变量 | 默认值 | 说明 |
 |------|--------|------|
-| `MENGASR_HOST` | `0.0.0.0` | 监听地址 |
-| `MENGASR_PORT` | `8787` | 监听端口 |
+| `MENGASR_CONFIG` | `/srv/mengasr/mengasr.yaml` | 配置文件路径 |
 | `MENGASR_API_KEY` | 空（跳过鉴权） | Bearer Token |
-| `MENGASR_MIMO_MODEL` | `/srv/mengasr/models/XiaomiMiMo/MiMo-V2.5-ASR` | MiMo 模型路径 |
-| `MENGASR_MIMO_TOKENIZER` | `/srv/mengasr/models/XiaomiMiMo/MiMo-Audio-Tokenizer` | Audio Tokenizer 路径 |
-| `MENGASR_MIMO_CODE` | `/srv/mengasr/MiMo-V2.5-ASR-code` | MiMo 推理代码路径 |
 | `MENGASR_MAX_UPLOAD_MB` | `2000` | 最大上传文件（MB） |
-| `MENGASR_JOB_TTL_HOURS` | `24` | 异步任务过期时间 |
-| `MENGASR_JOB_MAX_QUEUE` | `20` | 最大排队任务数 |
 | `MENGASR_HF_TOKEN` | 空 | HuggingFace Token（说话人分离需要） |
-| `HF_ENDPOINT` | `https://hf-mirror.com` | HuggingFace 镜像地址 |
+| `HF_ENDPOINT` | `https://huggingface.co` | HuggingFace 镜像地址（中国大陆可用 `https://hf-mirror.com`） |
 
 ## 运维
 
@@ -318,7 +319,7 @@ sudo systemctl enable mengasr
 - [ ] Qwen3-ForcedAligner-0.6B 精确时间戳（需下载 ~1.2 GB 模型）
 - [ ] Docker + NVIDIA Container Toolkit 容器化
 - [ ] 压力测试与性能调优
-- [ ] Dae 网络不稳定（医院网络环境）
+- [ ] 受限网络/离线环境支持优化
 
 ### 扩展点
 
@@ -327,11 +328,51 @@ sudo systemctl enable mengasr
 - **新 VAD**：替换 `src/mengasr_server/timestamps/vad.py` 即可更换 VAD 引擎
 - **云端后端**：在 `src/mengasr_client/` 中新增 DashScope 后端作为 fallback
 
+## 安全须知
+
+**请务必阅读以下内容后再部署使用。**
+
+### 网络暴露风险
+
+- 本项目**默认不启用 API 鉴权**（`api_key` 为空），任何能访问服务端口的人均可调用全部 API，包括上传文件、触发 GPU 推理等。
+- **严禁将服务直接暴露在公网（0.0.0.0 + 无防火墙）**。
+- 推荐的部署方式：
+  - 仅监听 `127.0.0.1`，通过反向代理（Nginx/Caddy）加鉴权后对外
+  - 设置 `auth.api_key` 启用 Bearer Token 鉴权
+  - 在可信内网 / VPN / Tailscale 等隔离网络中运行
+  - 使用防火墙（iptables / ufw / 云安全组）限制访问来源
+
+### 文件上传安全
+
+- 服务接受用户上传的音频/视频文件，默认上限 2000 MB。
+- 上传的文件会临时保存在 `/tmp/mengasr/`，处理完成后自动清理。请确保临时目录所在磁盘有足够空间。
+- 服务使用 FFmpeg 对上传文件进行预处理，恶意构造的媒体文件可能触发 FFmpeg 漏洞。建议保持 FFmpeg 版本更新。
+
+### GPU 资源消耗
+
+- ASR 推理会占用大量 GPU 显存（MiMo ~20GB，Qwen3 ~6GB）。
+- 异步任务队列默认限制 20 个排队任务，但每个任务都会消耗 GPU 资源。在无鉴权的网络中，攻击者可通过大量请求耗尽 GPU 资源。
+- 建议通过 `jobs.max_queue` 和 `listener.max_upload_mb` 限制资源使用。
+
+### 数据隐私
+
+- 音频文件在服务端处理完毕后会被删除，不会持久化存储。
+- 说话人分离功能需要联网下载 pyannote 模型（首次启动时）。模型缓存到本地后，后续可离线运行。
+- 如果音频内容涉及敏感信息，请确保服务运行在受控环境中。
+
 ## 致谢
 
 - [MiMo-V2.5-ASR](https://github.com/XiaoMi/MiMo-V2.5-ASR) — 小米 ASR 大模型
 - [pyannote.audio](https://github.com/pyannote/pyannote-audio) — 说话人分离
 - [Silero VAD](https://github.com/snakers4/silero-vad) — 语音活动检测
+
+## 免责声明
+
+本项目按"原样"（AS IS）提供，不作任何明示或暗示的保证，包括但不限于适销性、特定用途的适用性和非侵权性。
+
+- 作者不对因使用本项目造成的任何直接或间接损失负责，包括但不限于数据丢失、系统故障、安全问题或业务中断。
+- 用户应对自己的部署环境安全负责，包括但不限于网络安全配置、访问控制、数据保护和合规性。
+- 本项目依赖第三方模型和库（MiMo-V2.5-ASR、Qwen3-ASR、pyannote.audio、Silero VAD 等），其使用受各自许可证和服务条款约束，请自行确认合规性。
 
 ## License
 

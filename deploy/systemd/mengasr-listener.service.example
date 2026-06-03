@@ -1,17 +1,24 @@
 [Unit]
-Description=MengASR2 Listener — HTTP API 网关（对公网暴露）
+Description=MengASR2 Listener — HTTP API 网关
 After=network.target
-Wants=mengasr-worker-qwen3.service
+# 根据使用的后端，选择对应的 Worker 服务：
+# Wants=mengasr-worker.service        # MiMo 后端
+# Wants=mengasr-worker-qwen3.service  # Qwen3 后端
 
 [Service]
 Type=simple
-User=bchnm
+# ⚠️ 修改为实际运行用户
+User=mengasr
+# ⚠️ 修改为实际安装目录
 WorkingDirectory=/srv/mengasr/server
 
 # ── 配置文件 ──────────────────────────────────────────────
+# ⚠️ 修改为实际配置文件路径
 Environment=MENGASR_CONFIG=/srv/mengasr/mengasr.yaml
+# ⚠️ 修改为实际约束文件路径
 Environment=PIP_CONSTRAINT=/srv/mengasr/constraints.txt
 
+# ⚠️ 修改为实际 Python 解释器路径
 ExecStart=/srv/mengasr/.venv/bin/python -m mengasr_server --listener
 Restart=on-failure
 RestartSec=10

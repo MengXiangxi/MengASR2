@@ -5,14 +5,20 @@ Wants=network.target
 
 [Service]
 Type=simple
-User=bchnm
+# ⚠️ 修改为实际运行用户
+User=mengasr
+# ⚠️ 修改为实际安装目录
 WorkingDirectory=/srv/mengasr/server
 
 # ── 配置文件 ──────────────────────────────────────────────
+# ⚠️ 修改为实际配置文件路径
 Environment=MENGASR_CONFIG=/srv/mengasr/mengasr.yaml
-Environment=HF_ENDPOINT=https://hf-mirror.com
+# HuggingFace 镜像（中国大陆无法直连时取消注释）
+# Environment=HF_ENDPOINT=https://hf-mirror.com
+# ⚠️ 修改为实际约束文件路径
 Environment=PIP_CONSTRAINT=/srv/mengasr/constraints.txt
 
+# ⚠️ 修改为实际 Python 解释器路径
 ExecStart=/srv/mengasr/.venv/bin/python -m mengasr_server --worker
 Restart=on-failure
 RestartSec=10
@@ -25,6 +31,7 @@ SupplementaryGroups=video
 
 # 资源限制
 LimitNOFILE=65536
+# ⚠️ 根据实际 GPU 显存和系统内存调整
 MemoryMax=24G
 
 [Install]

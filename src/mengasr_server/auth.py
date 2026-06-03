@@ -15,7 +15,7 @@ async def verify_token(
 ) -> str:
     """校验 Bearer token。如果服务端未配置 api_key 则跳过鉴权。"""
     if not settings.api_key:
-        # 未配置密钥 → 允许所有请求（适合 Tailscale 内网）
+        # 未配置密钥 → 允许所有请求（适合可信内网环境）
         return ""
 
     if cred is None:

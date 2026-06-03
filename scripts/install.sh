@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# MengASR2 服务器安装脚本（Ubuntu 22.04 + RTX 3090 Ti）
+# MengASR2 服务器安装脚本（Ubuntu 22.04 + NVIDIA GPU）
 # 用法: bash scripts/install.sh
 set -euo pipefail
 

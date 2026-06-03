@@ -8,7 +8,7 @@ from .config_schema import get_worker_config as _get_wc
 _wc = _get_wc()
 if _wc.get("hf_endpoint"):
     _os.environ.setdefault("HF_ENDPOINT", _wc["hf_endpoint"])
-# HF_HUB_OFFLINE：本地已有模型权重时禁止联网检查（医院网络不通）
+# HF_HUB_OFFLINE：本地已有模型权重时禁止联网检查（离线环境）
 _os.environ.setdefault("HF_HUB_OFFLINE", "1")
 # 缩短 HF 下载超时，避免网络不可用时长时间阻塞
 _os.environ.setdefault("HF_HUB_DOWNLOAD_TIMEOUT", "10")

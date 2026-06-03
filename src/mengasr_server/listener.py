@@ -81,7 +81,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="MengASR2",
-    description="本地 ASR HTTP 服务 — MiMo-V2.5-ASR on RTX 3090 Ti",
+    description="本地 ASR HTTP 服务 — 基于 Qwen3-ASR / MiMo-V2.5-ASR",
     version="0.3.0",
     lifespan=lifespan,
 )

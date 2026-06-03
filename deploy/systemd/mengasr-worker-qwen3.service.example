@@ -5,15 +5,22 @@ Wants=network.target
 
 [Service]
 Type=simple
-User=bchnm
+# ⚠️ 修改为实际运行用户
+User=mengasr
+# ⚠️ 修改为实际安装目录
 WorkingDirectory=/srv/mengasr/server
 
-# ── Qwen3-ASR 独立 venv（transformers 4.57 vs MiMo 4.49 不兼容）───
-Environment=PATH=/srv/mengasr/.venv-qwen3asr/bin:/usr/local/cuda-12/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+# ── Qwen3-ASR 独立 venv（transformers 版本与 MiMo 不兼容）───
+# ⚠️ 修改 PATH 中的 venv 路径和 CUDA 路径
+Environment=PATH=/srv/mengasr/.venv-qwen3asr/bin:/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+# ⚠️ 修改为实际配置文件路径
 Environment=MENGASR_CONFIG=/srv/mengasr/mengasr-qwen3.yaml
-Environment=HF_ENDPOINT=https://hf-mirror.com
+# HuggingFace 镜像（中国大陆无法直连时取消注释）
+# Environment=HF_ENDPOINT=https://hf-mirror.com
+# ⚠️ 修改为实际约束文件路径
 Environment=PIP_CONSTRAINT=/srv/mengasr/constraints-qwen3.txt
 
+# ⚠️ 修改为实际 Python 解释器路径
 ExecStart=/srv/mengasr/.venv-qwen3asr/bin/python -m mengasr_server --worker
 Restart=on-failure
 RestartSec=10

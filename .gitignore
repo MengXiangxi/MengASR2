@@ -27,6 +27,19 @@ memory/
 *.key
 *.pem
 
+# Actual config files (contain deployment-specific paths and tokens)
+config/mengasr.yaml
+config/mengasr-qwen3.yaml
+
+# Actual systemd service files (contain deployment-specific user/paths)
+deploy/systemd/mengasr.service
+deploy/systemd/mengasr-worker.service
+deploy/systemd/mengasr-listener.service
+deploy/systemd/mengasr-worker-qwen3.service
+
+# Lock files with local wheel references (regenerate on target machine)
+requirements.lock
+
 # Models (too large for git)
 models/
 *.safetensors

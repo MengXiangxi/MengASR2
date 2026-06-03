@@ -261,7 +261,7 @@ def main():
   python batch_transcribe.py
 
   # 指定服务端地址和输入目录
-  python batch_transcribe.py --server http://192.168.1.100:8787 --input ./recordings
+  python batch_transcribe.py --server http://your-server:8787 --input ./recordings
 
   # 使用同步模式
   python batch_transcribe.py --no-async
@@ -280,8 +280,8 @@ def main():
     # ── 服务端 ────────────────────────────────────────────
     parser.add_argument(
         "--server", "-s",
-        default="http://100.83.201.78:8787",
-        help="MengASR2 服务端地址 (默认: http://100.83.201.78:8787)",
+        default="http://localhost:8787",
+        help="MengASR2 服务端地址 (默认: http://localhost:8787)",
     )
     parser.add_argument(
         "--api-key",

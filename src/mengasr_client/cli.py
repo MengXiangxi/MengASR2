@@ -2,7 +2,7 @@
 
 用法:
     # 同步转写，结果输出到 stdout
-    mengasr transcribe audio.mp3 --server-url http://bchnm-dl.bchnm:8787
+    mengasr transcribe audio.mp3 --server-url http://localhost:8787
 
     # 带时间戳 + SRT 输出
     mengasr transcribe audio.mp3 --timestamps segment --format srt -o output.srt
@@ -14,10 +14,10 @@
     mengasr transcribe meeting.mp3 --timestamps segment --diarization -o meeting.srt
 
     # 健康检查
-    mengasr health --server-url http://bchnm-dl.bchnm:8787
+    mengasr health --server-url http://localhost:8787
 
     # 查看任务列表
-    mengasr jobs --server-url http://bchnm-dl.bchnm:8787
+    mengasr jobs --server-url http://localhost:8787
 """
 
 from __future__ import annotations

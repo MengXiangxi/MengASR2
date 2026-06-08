@@ -155,6 +155,16 @@ curl -X POST http://localhost:8787/v1/audio/transcriptions \
   -o 输出.srt
 ```
 
+## 批量转写工具
+
+Windows 下可直接双击 `batch_transcribe.bat`，或通过命令行运行：
+
+```bash
+python batch_transcribe.py -s http://<服务器IP>:8787 -i ./recordings
+```
+
+支持交互式参数配置、说话人分离、断点续转（跳过已有结果）。详见 **[批量转写使用指南](docs/batch-transcribe.md)**。
+
 ## CLI 客户端
 
 安装后可通过 `mengasr` 命令直接使用：

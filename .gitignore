@@ -32,10 +32,7 @@ config/mengasr.yaml
 config/mengasr-qwen3.yaml
 
 # Actual systemd service files (contain deployment-specific user/paths)
-deploy/systemd/mengasr.service
-deploy/systemd/mengasr-worker.service
-deploy/systemd/mengasr-listener.service
-deploy/systemd/mengasr-worker-qwen3.service
+deploy/systemd/*
 
 # Lock files with local wheel references (regenerate on target machine)
 requirements.lock
@@ -59,8 +56,9 @@ Thumbs.db
 # Operations logs (development process documentation)
 ops/
 
-# Development documentation
-docs/
+# Development documentation (allow user-facing docs)
+docs/*.md
+!docs/batch-transcribe.md
 
 # Data files
 data/

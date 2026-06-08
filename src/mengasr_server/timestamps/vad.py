@@ -31,15 +31,25 @@ class VADSegmenter:
         self._model: Any = None
 
     def _ensure_model(self) -> None:
-        """延迟加载 Silero VAD 模型。"""
+        """延迟加载 Silero VAD 模型（优先本地缓存，离线可用）。"""
         if self._model is not None:
             return
         logger.info("加载 Silero VAD 模型……")
-        self._model, _ = torch.hub.load(
-            repo_or_dir="snakers4/silero-vad",
-            model="silero_vad",
-            trust_repo=True,
-        )
+        # 优先使用本地缓存，避免在无网络环境下访问 GitHub 导致失败
+        try:
+            self._model, _ = torch.hub.load(
+                repo_or_dir="snakers4/silero-vad",
+                model="silero_vad",
+                trust_repo=True,
+                source="local",
+            )
+        except Exception:
+            logger.warning("本地缓存加载失败，尝试在线下载……")
+            self._model, _ = torch.hub.load(
+                repo_or_dir="snakers4/silero-vad",
+                model="silero_vad",
+                trust_repo=True,
+            )
         logger.info("Silero VAD 模型加载完成")
 
     def detect_speech(

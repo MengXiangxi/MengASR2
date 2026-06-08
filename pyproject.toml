@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=68.0"]
-build-backend = "setuptools.backends._legacy:_Backend"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "mengasr2"
@@ -20,5 +20,5 @@ mengasr-server = "mengasr_server.app:main"
 mengasr-listener = "mengasr_server.listener:main"
 mengasr-worker = "mengasr_server.worker:main"
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[tool.hatch.build.targets.wheel]
+packages = ["src/mengasr_server", "src/mengasr_client"]
